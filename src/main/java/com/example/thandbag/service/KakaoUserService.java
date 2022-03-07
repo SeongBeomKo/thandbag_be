@@ -195,7 +195,7 @@ public class KakaoUserService {
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = JwtTokenUtils.generateJwtToken(userDetails);
+        String token = JwtTokenUtils.generateJwtToken(userDetails, JwtTokenUtils.SEC * 1000);
 
         response.addHeader("Authorization", "Bearer " + token);
     }

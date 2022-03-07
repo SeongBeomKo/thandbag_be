@@ -3,11 +3,12 @@ package com.example.thandbag.security.jwt;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.example.thandbag.security.UserDetailsImpl;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Date;
 
 public class JwtTokenUtils {
-    private static final int SEC = 1;
+    public static final int SEC = 1;
     private static final int MINUTE = 60 * SEC;
     private static final int HOUR = 60 * MINUTE;
     private static final int DAY = 24 * HOUR;
@@ -16,9 +17,12 @@ public class JwtTokenUtils {
 
     public static final String CLAIM_EXPIRED_DATE = "EXPIRED_DATE";
     public static final String CLAIM_USER_NAME = "USER_NAME";
-    public static final String JWT_SECRET = "thandbag_!@#$%";
+    /* masking 처리 */
+    @Value("${spring.jwt.secret}")
+    public static String jwt_secret;
 
-    public static String generateJwtToken(UserDetailsImpl userDetails) {
+
+    public static String generateJwtToken(UserDetailsImpl userDetails, int expiration) {
         String token = null;
         try {
             token = JWT.create()
@@ -36,6 +40,6 @@ public class JwtTokenUtils {
     }
 
     private static Algorithm generateAlgorithm() {
-        return Algorithm.HMAC256(JWT_SECRET);
+        return Algorithm.HMAC256(jwt_secret);
     }
 }

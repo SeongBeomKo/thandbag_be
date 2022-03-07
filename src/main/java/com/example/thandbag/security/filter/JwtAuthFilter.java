@@ -36,17 +36,19 @@ public class JwtAuthFilter extends AbstractAuthenticationProcessingFilter {
         // JWT 값을 담아주는 변수 TokenPayload
         String tokenPayload = request.getHeader("Authorization");
         System.out.println(tokenPayload);
+        String refreshToken = request.getHeader("refreshToken");
+        System.out.println("refreshToken: " + refreshToken);
         if (tokenPayload == null) {
             throw new IllegalArgumentException("토큰 정보가 존재하지 않습니다.");
         }
 
 
-        JwtPreProcessingToken jwtToken = new JwtPreProcessingToken(
-                extractor.extract(tokenPayload, request));
+        JwtPreProcessingToken accessAndRefreshToken = new JwtPreProcessingToken(
+                extractor.extract(tokenPayload, request) + "!" + extractor.extract(refreshToken, request));
 
         return super
                 .getAuthenticationManager()
-                .authenticate(jwtToken);
+                .authenticate(accessAndRefreshToken);
     }
 
     @Override

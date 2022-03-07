@@ -79,8 +79,10 @@ public class UserService {
 
         /* 토큰 생성 */
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
-        String token = JwtTokenUtils.generateJwtToken(userDetails);
-        response.addHeader("Authorization", "Bearer " + token);
+        String accessToken = JwtTokenUtils.generateJwtToken(userDetails, JwtTokenUtils.SEC * 10);
+        String refreshToken = JwtTokenUtils.generateJwtToken(userDetails, JwtTokenUtils.SEC * 30);
+        response.addHeader("Authorization", "Bearer " + accessToken);
+        response.addHeader("refreshToken", "Bearer " + refreshToken);
 
         return new LoginResultDto(
                 user.getId(),

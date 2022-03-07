@@ -28,6 +28,7 @@ public class RedisConfig {
     /**
      * 어플리케이션에서 사용할 redisTemplate 설정
      */
+    /* 스프링부트는 자바 레디스 클라이언트는 lettuce를 기본값으로 사용 */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(
             RedisConnectionFactory connectionFactory) {
@@ -35,6 +36,7 @@ public class RedisConfig {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
 
         redisTemplate.setConnectionFactory(connectionFactory);
+        // 아래 두 라인을 작성하지 않으면, key값이 \xac\xed\x00\x05t\x00\x03sol 이렇게 조회된다.
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(
                 new Jackson2JsonRedisSerializer<>(String.class));

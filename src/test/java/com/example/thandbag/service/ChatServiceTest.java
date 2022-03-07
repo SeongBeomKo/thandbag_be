@@ -37,7 +37,7 @@ class ChatServiceTest {
     @Mock
     RedisTemplate redisTemplate;
     @Mock
-    ChatRedisRepository chatRedisRepository;
+    RedisRepository chatRedisRepository;
     @Mock
     UserRepository userRepository;
     @Mock

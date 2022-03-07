@@ -2,7 +2,7 @@ package com.example.thandbag.config;
 
 import com.example.thandbag.Enum.MessageType;
 import com.example.thandbag.dto.chat.ChatMessageDto;
-import com.example.thandbag.repository.ChatRedisRepository;
+import com.example.thandbag.repository.RedisRepository;
 import com.example.thandbag.repository.UserRepository;
 import com.example.thandbag.security.jwt.JwtDecoder;
 import com.example.thandbag.service.ChatService;
@@ -23,7 +23,7 @@ import java.util.Optional;
 public class StompHandler implements ChannelInterceptor {
 
     private final JwtDecoder jwtDecoder;
-    private final ChatRedisRepository chatRedisRepository;
+    private final RedisRepository chatRedisRepository;
     private final ChatService chatService;
     private final UserRepository userRepository;
 
@@ -65,11 +65,14 @@ public class StompHandler implements ChannelInterceptor {
             chatRedisRepository.plusUserCount(roomId);
 
             /* 클라이언트 입장 메시지를 채팅방에 발송한다.(redis publish) */
-            String jwtToken = accessor
+            String accessToken = accessor
                     .getFirstNativeHeader("Authorization")
                     .substring(7);
+            String refreshToken = accessor
+                    .getFirstNativeHeader("refreshToken")
+                    .substring(7);
             String name = userRepository
-                    .findByUsername(jwtDecoder.decodeUsername(jwtToken)).get()
+                    .findByUsername(jwtDecoder.decodeUsername(accessToken)).get()
                     .getNickname();
 
             chatRedisRepository.setNickname(sessionId, name);

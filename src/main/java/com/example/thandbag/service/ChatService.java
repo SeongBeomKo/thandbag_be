@@ -31,7 +31,7 @@ public class ChatService {
     private final ChannelTopic channelTopic;
     private final RedisTemplate redisTemplate;
     private final AlarmService alarmService;
-    private final ChatRedisRepository chatRedisRepository;
+    private final RedisRepository chatRedisRepository;
     private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatContentRepository chatContentRepository;

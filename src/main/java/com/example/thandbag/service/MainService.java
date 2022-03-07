@@ -1,5 +1,6 @@
 package com.example.thandbag.service;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.thandbag.Enum.Action;
 import com.example.thandbag.Enum.Category;
 import com.example.thandbag.dto.post.ThandbagRequestDto;
@@ -8,6 +9,9 @@ import com.example.thandbag.model.Post;
 import com.example.thandbag.model.PostImg;
 import com.example.thandbag.model.User;
 import com.example.thandbag.repository.*;
+import com.example.thandbag.security.UserDetailsImpl;
+import com.example.thandbag.security.jwt.JwtDecoder;
+import com.example.thandbag.security.jwt.JwtTokenUtils;
 import com.example.thandbag.timeconversion.TimeConversion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -19,9 +23,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import static com.example.thandbag.security.jwt.JwtTokenUtils.CLAIM_EXPIRED_DATE;
 
 @RequiredArgsConstructor
 @Service
@@ -36,12 +45,35 @@ public class MainService {
     private final AlarmRepository alarmRepository;
     private final RedisTemplate redisTemplate;
     private final ChannelTopic channelTopic;
+    private final RedisRepository redisRepository;
+    private final JwtDecoder jwtDecoder;
 
     /* 생드백 생성 */
     @Transactional
     public ThandbagResponseDto createThandbag(
-            ThandbagRequestDto thandbagRequestDto, User user)
+            ThandbagRequestDto thandbagRequestDto, User user,
+            HttpServletResponse response, HttpServletRequest request)
             throws IOException {
+
+        /* token 검증 */
+        DecodedJWT decodedJWT = jwtDecoder
+                .isValidToken(request.getHeader("Authorization").substring(7))
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "토큰 정보가 존재하지 않습니다."));
+
+        Date expiredDate = decodedJWT
+                .getClaim(CLAIM_EXPIRED_DATE)
+                .asDate();
+
+        if (expiredDate.before(new Date())) {
+            if (!redisRepository
+                    .checkRefreshToken(request.getHeader("refreshToken").substring(7),
+                            user.getUsername())) {
+                UserDetailsImpl userDetails = new UserDetailsImpl(user);
+                String accessToken = JwtTokenUtils.generateJwtToken(userDetails, JwtTokenUtils.SEC * 10);
+                response.setHeader("Authorization", accessToken);
+            }
+        }
 
         /* 현재 사용자 가져오기 */
         List<PostImg> postImgList = new ArrayList<>();
@@ -86,7 +118,7 @@ public class MainService {
         String bannerLv = lvImgRepository.findByTitleAndLevel(
                 "얼빡배너 기본",
                 user.getLevel()
-                ).getLvImgUrl();
+        ).getLvImgUrl();
 
         return ThandbagResponseDto.builder()
                 .userId(user.getId())
@@ -112,13 +144,13 @@ public class MainService {
     public List<ThandbagResponseDto> showAllThandbag(int page, int size) {
         Pageable pageable =
                 PageRequest.of(page, size, Sort.by("createdAt")
-                .descending());
+                        .descending());
 
         List<ThandbagResponseDto> allThandbags = new ArrayList<>();
 
         List<Post> allPosts = postRepository
                 .findAllByShareTrueOrderByCreatedAtDesc(pageable).getContent();
-                //.findAllByShareTrueOrderByCreatedAtDesc();
+        //.findAllByShareTrueOrderByCreatedAtDesc();
 
         for (Post post : allPosts) {
             ThandbagResponseDto thandbagResponseDto =
@@ -133,8 +165,8 @@ public class MainService {
                                                      int pageNumber,
                                                      int size) {
         Pageable sortedByModifiedAtDesc = PageRequest.of(pageNumber,
-                                            size,
-                                            Sort.by("modifiedAt").descending()
+                size,
+                Sort.by("modifiedAt").descending()
         );
 
         List<Post> posts = postRepository

@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
@@ -21,11 +23,14 @@ public class MainController {
     @PostMapping("/api/newThandbag")
     public ThandbagResponseDto createThandbag(
             @RequestBody ThandbagRequestDto thandbagRequestDto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails)
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            HttpServletResponse response,
+            HttpServletRequest request)
             throws IOException {
 
+
         return mainService
-                .createThandbag(thandbagRequestDto, userDetails.getUser());
+                .createThandbag(thandbagRequestDto, userDetails.getUser(), response, request);
     }
 
     /* 공개된 생드백 전체 리스트 보기 */

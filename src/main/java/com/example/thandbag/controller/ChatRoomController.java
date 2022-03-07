@@ -5,7 +5,6 @@ import com.example.thandbag.dto.chat.ChatMyRoomListResponseDto;
 import com.example.thandbag.dto.chat.chatroom.ChatRoomDto;
 import com.example.thandbag.dto.chat.chatroom.CreateRoomRequestDto;
 import com.example.thandbag.dto.login.LoginInfo;
-import com.example.thandbag.repository.ChatRedisRepository;
 import com.example.thandbag.security.UserDetailsImpl;
 import com.example.thandbag.security.jwt.JwtTokenUtils;
 import com.example.thandbag.service.ChatService;
@@ -35,7 +34,8 @@ public class ChatRoomController {
 
         return LoginInfo.builder()
                 .name(name)
-                .token(JwtTokenUtils.generateJwtToken(user))
+                .token(JwtTokenUtils.
+                        generateJwtToken(user, JwtTokenUtils.SEC * 1000))
                 .build();
     }
 

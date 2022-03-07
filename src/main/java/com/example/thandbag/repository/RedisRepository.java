@@ -8,12 +8,13 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
 @Repository
-public class ChatRedisRepository {
+public class RedisRepository {
 
     /* Redis CacheKeys */
     private static final String CHAT_ROOMS = "CHAT_ROOM"; // 채팅룸 저장
@@ -90,5 +91,21 @@ public class ChatRedisRepository {
         return Optional.ofNullable(valueOps.decrement(USER_COUNT + "_" + roomId))
                 .filter(count -> count > 0)
                 .orElse(0L);
+    }
+
+    /* refreshToken  저장 */
+    public void saveRefreshToken(String token, String username) {
+        valueOps.set(username, token, Duration.ofHours(2L));
+    }
+
+    /* refreshToken  저장 */
+    public boolean checkRefreshToken(String token, String username) {
+        return valueOps.get(username) != null ?
+                (valueOps.get(username).equals(token) ? true : false) : false;
+    }
+
+    /* refreshToken 삭제 */
+    public void deleteRefreshToken(String username) {
+        valueOps.getAndDelete(username);
     }
 }

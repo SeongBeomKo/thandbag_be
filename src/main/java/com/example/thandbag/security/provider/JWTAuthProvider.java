@@ -1,6 +1,8 @@
 package com.example.thandbag.security.provider;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.thandbag.model.User;
+import com.example.thandbag.repository.RedisRepository;
 import com.example.thandbag.repository.UserRepository;
 import com.example.thandbag.security.UserDetailsImpl;
 import com.example.thandbag.security.jwt.JwtDecoder;
@@ -13,20 +15,47 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
+import static com.example.thandbag.security.jwt.JwtTokenUtils.CLAIM_EXPIRED_DATE;
+import static com.example.thandbag.security.jwt.JwtTokenUtils.CLAIM_USER_NAME;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JWTAuthProvider implements AuthenticationProvider {
-    private final JwtDecoder jwtDecoder;
 
+    private final JwtDecoder jwtDecoder;
     private final UserRepository userRepository;
+    private final RedisRepository redisRepository;
 
     // JWT 토큰 유효성 검사
     @Override
     public Authentication authenticate(Authentication authentication)
             throws AuthenticationException {
         String token = (String) authentication.getPrincipal();
-        String username = jwtDecoder.decodeUsername(token);
+        String [] tokens = token.split("!");
+        String accessToken = tokens[0];
+        String refreshToken = tokens[1];
+
+        DecodedJWT decodedJWT = jwtDecoder.isValidToken(accessToken)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "토큰 정보가 존재하지 않습니다."));
+
+        Date expiredDate = decodedJWT
+                .getClaim(CLAIM_EXPIRED_DATE)
+                .asDate();
+
+        String username = decodedJWT.getClaim(CLAIM_USER_NAME).asString();
+
+        Date now = new Date();
+
+        if (expiredDate.before(now)) {
+            if (!redisRepository.checkRefreshToken(refreshToken, username)) {
+                throw new IllegalArgumentException("토큰 정보가 존재하지 않습니다.");
+            }
+        }
+        //String username = jwtDecoder.decodeUsername(token);
 
         //  API 사용시마다 매번 User DB 조회 필요
         //  -> 해결을 위해서는 UserDetailsImpl 에 User 객체를 저장하지 않도록 수정
